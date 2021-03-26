@@ -27,8 +27,6 @@ env:
 # Default task timeout
 timeout_in: 30m
 
-gcp_credentials: ENCRYPTED[!77d4c8251094346c41db63cb05eba2ff98eaff04e58c5d0e2a8e2c6f159f7d601b3fe9a2a4fce1666297e371f2fc8752!]
-
 # Run a simple lint on the community cluster
 flake8_task:
     alias: "flake8_test"
@@ -66,39 +64,12 @@ py_break_task:
 report_stageone_task:
     alias: "stageone_report"
     name: "Report Stage One - $BUILD_NAME"
-    gce_instance: &standardvm
-        image_project: "${PROJECT}"
-        image_name: "${VM_IMAGE_NAME}"
-        cpu: 2
-        memory: "2Gb"
-        # minimum disk size is 20
-        disk: 20
-    matrix:
-        - env:
-            PROJECT: ${RH_PROJECT}
-            BUILD_NAME: ${FEDORA_NAME}
-            VM_IMAGE_NAME: ${FEDORA_IMAGE_NAME}
-        - env:
-            PROJECT: ${RH_PROJECT}
-            BUILD_NAME: ${FEDORA_PRIOR_NAME}
-            VM_IMAGE_NAME: ${FEDORA_PRIOR_IMAGE_NAME}
-       # - env:
-       #     BUILD_NAME: ${RHEL_NAME}
-       #     VM_IMAGE_NAME: ${RHEL_IMAGE_NAME}
-        - env:
-            PROJECT: ${UBUNTU_PROJECT}
-            BUILD_NAME: ${UBUNTU_NAME}
-            VM_IMAGE_NAME: ${UBUNTU_IMAGE_NAME}
-        - env:
-            PROJECT: ${UBUNTU_PROJECT}
-            BUILD_NAME: ${UBUNTU_PRIOR_NAME}
-            VM_IMAGE_NAME: ${UBUNTU_PRIOR_IMAGE_NAME}
-    # Ubuntu has sos installed by default, so remove that to avoid any conflicts
-    remove_sos_script: |
-        if [ $(command -v apt) ] && [ $(command -v sosreport) ]; then
-            apt -y purge sosreport
-            apt update
-            apt -y install python3-pip
-        fi
-    setup_script: pip3 install avocado-framework==84.0
+    container:
+      matrix:
+        - image: fedora:33
+        - image: fedora:32
+    setup_script:
+      - dnf -y install git python3-pip
+      - pip3 install git+https://github.com/clebergnu/avocado@2b7b38d7190b00ed74720ee592073fd1337cf76d#egg=avocado_framework
+    list_script: avocado list -t stageone tests/
     main_script: PYTHONPATH=tests/ avocado run -t stageone tests/
