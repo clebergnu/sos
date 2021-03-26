@@ -6,7 +6,7 @@
 #
 # See the LICENSE file in the source distribution for further information.
 
-from sos_tests import StageOneReportTest
+from ..sos_tests import StageOneReportTest
 
 import re
 
